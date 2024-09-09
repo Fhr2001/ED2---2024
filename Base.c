@@ -1,11 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 typedef struct Funcionario
 {
     int id;
-    char* nome [50];
-    char* cpf [14];
+    char nome [50];
+    char cpf [14];
 }Funcionario;
 
 
@@ -48,7 +49,6 @@ void EscreverArquivo (Funcionario* funcionario){
     fwrite (&funcionario->id, sizeof(int), 1, P);
     fwrite (&funcionario->nome, sizeof(char), sizeof(funcionario->nome), P);
 
-    printf("%s\n", &funcionario->nome);
     fwrite (&funcionario->cpf, sizeof(char), sizeof(funcionario->cpf), P);
 
     fclose (P);
@@ -70,8 +70,8 @@ void LerArquivoTodo (){
         fread (func->cpf, sizeof(char), sizeof(func->cpf), P);
 
         printf ("ID: %d\n", func->id);
-        printf ("Nome: %d\n", func->nome);
-        printf ("CPF: %d\n", func->cpf);
+        printf ("Nome: %s\n", func->nome);
+        printf ("CPF: %s\n", func->cpf);
     }
 
     free (func);
@@ -85,6 +85,8 @@ Funcionario LerFuncionario (FILE* P, int n){
 
 }
 
+
+
 int main (){
 
     CriarArquivo();
@@ -92,11 +94,15 @@ int main (){
     Funcionario* abc = (Funcionario*) malloc(sizeof(Funcionario));
 
     
+    char nome [3] = "ab";
+    char cpf [14] = "000.000.000-00";
 
+       
     abc->id = 7;
 
-    abc->nome[0] = "abcd";
-    abc->cpf [14] = "000.000.000-00";
+    strcpy(abc->nome, nome);
+    strcpy(abc->cpf, cpf);
+    
 
     EscreverArquivo (abc);
 
@@ -104,5 +110,7 @@ int main (){
 
     free (abc);
 
-    return 1;
+    
+
+    return 0;
 }

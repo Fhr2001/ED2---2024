@@ -2,12 +2,19 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef struct Funcionario
+
+#define TRUE 1
+#define FALSE 0
+
+int particao = 0;
+
+typedef struct Clientes
 {
-    int id;
-    char nome [50];
-    char cpf [14];
-}Funcionario;
+    int CodCliente;
+    char Nome [50];
+    char DataNascimento [20];
+    int Flag;
+}Clientes;
 
 
 void CriarArquivo (){
@@ -15,6 +22,30 @@ void CriarArquivo (){
     FILE* P;
 
     if ((P = fopen ("test.dat", "w+b")) == NULL){
+                printf ("não foi possível crirar o arquivo");
+                exit(1);
+            }
+
+    printf ("arquivo criado com sucesso\n");
+    fclose(P);
+
+    return;
+}
+
+void CriaParticao (){
+
+    char convercao [5];
+
+    convercao[0] = particao+'0';
+    convercao [1] = '.';
+    convercao [2] = 'd';
+    convercao [3] = 'a';
+    convercao [4] = 't';
+
+
+    FILE* P;
+
+    if ((P = fopen (convercao, "w+b")) == NULL){
                 printf ("não foi possível crirar o arquivo");
                 exit(1);
             }
@@ -39,17 +70,18 @@ FILE* AbrirArquivo (){
 }
 
 //Recebe um funcionario e o insere no arquivo binário
-void EscreverArquivo (Funcionario* funcionario){
-
+void EscreverArquivo (Clientes* cliente){
     FILE* P = AbrirArquivo ();
 
     //coloca o cursor no final do arquivo
     fseek (P, 0, SEEK_END);
 
-    fwrite (&funcionario->id, sizeof(int), 1, P);
-    fwrite (&funcionario->nome, sizeof(char), sizeof(funcionario->nome), P);
+    fwrite (&cliente->CodCliente, sizeof(int), 1, P);
+    fwrite (&cliente->Nome, sizeof(char), sizeof(cliente->Nome), P);
 
-    fwrite (&funcionario->cpf, sizeof(char), sizeof(funcionario->cpf), P);
+    fwrite (&cliente->DataNascimento, sizeof(char), sizeof(cliente->DataNascimento), P);
+
+    fwrite (&cliente->Flag, sizeof(int), 1, P);
 
     fclose (P);
 }
@@ -61,17 +93,18 @@ void LerArquivoTodo (){
 
     //coloca o cursor no inicio do arquivo
     fseek (P, 0, SEEK_SET);
-    Funcionario* func = (Funcionario*) malloc(sizeof(Funcionario));
+    Clientes* func = (Clientes*) malloc(sizeof(Clientes));
        
     //caso o fread retorna o quanto conseguiu ler, logo valores nulos ou inferiores significam o fim do arquivo
-    while ((fread (&func->id, sizeof(int), 1, P)) > 0){
+    while ((fread (&func->CodCliente, sizeof(int), 1, P)) > 0){
         
-        fread (func->nome, sizeof(char), sizeof(func->nome), P);
-        fread (func->cpf, sizeof(char), sizeof(func->cpf), P);
+        fread (func->Nome, sizeof(char), sizeof(func->Nome), P);
+        fread (func->DataNascimento, sizeof(char), sizeof(func->DataNascimento), P);
+        fread (&func->Flag, sizeof(int), 1, P);
 
-        printf ("ID: %d\n", func->id);
-        printf ("Nome: %s\n", func->nome);
-        printf ("CPF: %s\n", func->cpf);
+        printf ("CodCliente: %d\n", func->CodCliente);
+        printf ("Nome: %s\n", func->Nome);
+        printf ("DataNascimento: %s\n", func->DataNascimento);
     }
 
     free (func);
@@ -79,38 +112,119 @@ void LerArquivoTodo (){
     fclose (P);
 }
 
-//Extrai o n-ésimo funcionario
-Funcionario LerFuncionario (FILE* P, int n){
+//Arquivo fica em aberto (salva o cursor por não fechar)
+//Iniciar arquivo com antecedencia 
+Clientes* LerClientes (FILE* P){
 
+    Clientes* func = (Clientes*) malloc(sizeof(Clientes));
 
+    fread (&func->CodCliente, sizeof(int), 1, P);
+    fread (func->Nome, sizeof(char), sizeof(func->Nome), P);
+    fread (func->DataNascimento, sizeof(char), sizeof(func->DataNascimento), P);
+    fread (&func->Flag, sizeof(int), 1, P);
+    
+    printf ("CodCliente: %d\n", func->CodCliente);
+    printf ("Nome: %s\n", func->Nome);
+    printf ("DataNascimento: %s\n", func->DataNascimento);
+    printf ("Flag: %d\n", func->Flag);
+
+    return  func;
 }
+
 
 
 
 int main (){
 
+    CriaParticao();
+
     CriarArquivo();
 
-    Funcionario* abc = (Funcionario*) malloc(sizeof(Funcionario));
+    Clientes* abc = (Clientes*) malloc(sizeof(Clientes));
 
-    
+    Clientes Vetor [7];
+   
     char nome [3] = "ab";
-    char cpf [14] = "000.000.000-00";
+    char data [20] = "00/00/0000";
 
        
-    abc->id = 7;
+    abc->CodCliente = 7;
+    abc->Flag = FALSE;
 
-    strcpy(abc->nome, nome);
-    strcpy(abc->cpf, cpf);
+    strcpy(abc->Nome, nome);
+    strcpy(abc->DataNascimento, data);
     
 
     EscreverArquivo (abc);
 
-    LerArquivoTodo();
+    Clientes* def = (Clientes*) malloc(sizeof(Clientes));
+  
+    char nome2 [3] = "cd";
+    char data2 [20] = "11/11/1111";
+
+       
+    def->CodCliente = 56;
+    def->Flag = TRUE;
+
+    strcpy(def->Nome, nome2);
+    strcpy(def->DataNascimento, data2);
+    
+
+    EscreverArquivo (def);
+
+    //LerArquivoTodo();
+
+
+    Clientes* temp1;
+    Clientes* temp2;
+
+
+    //É necessario abrir o arquivo antes para evitar de resetar o cursor do arquivo
+    //Lembre de fechar o arquivo quando terminar de usar
+    //Dar free no malloc do cliente após o uso
+    FILE* P = AbrirArquivo ();
+
+    temp1 = LerClientes(P);
+    temp2 = LerClientes(P);
+
+    fclose (P);
+
+    free (temp1);
+    free (temp2);
 
     free (abc);
+    free (def);
 
+    Clientes* cliente = (Clientes*) malloc(sizeof(Clientes));
     
+    while ((fread (&cliente->CodCliente, sizeof(int), 1, P)) > 0){
+        
+        fread (cliente->Nome, sizeof(char), sizeof(cliente->Nome), P);
+        fread (cliente->DataNascimento, sizeof(char), sizeof(cliente->DataNascimento), P);
+        fread (&cliente->Flag, sizeof(int), 1, P);
+
+        Vetor [0].CodCliente = cliente->CodCliente;
+        strcpy(Vetor->Nome, cliente->Nome);
+        strcpy(Vetor->DataNascimento, cliente->DataNascimento);
+        Vetor [0].Flag = 0;
+
+        CriaParticao();
+
+        for (int i = 1; i < 7; i++){
+
+            cliente = LerClientes(P);
+
+            Vetor [0].CodCliente = cliente->CodCliente;
+            strcpy(Vetor->Nome, cliente->Nome);
+            strcpy(Vetor->DataNascimento, cliente->DataNascimento);
+            Vetor [0].Flag = 0;
+
+
+
+        }
+    }
+    
+    free (cliente);
 
     return 0;
 }

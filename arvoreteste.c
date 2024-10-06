@@ -23,9 +23,9 @@ void arv(int vetor[], int tam, int i)
         maior = i;
         noEsq = 2 * i + 1;
         noDir = 2 * i + 2;
-        if(noEsq < tam && vetor[noEsq] > vetor[i])
+        if(noEsq < tam && vetor[noEsq] < vetor[i])
             maior = noEsq;
-        if(noDir < tam && vetor[noDir] > vetor[i])
+        if(noDir < tam && vetor[noDir] < vetor[i])
             maior = noDir;
         if(maior != i)
         {

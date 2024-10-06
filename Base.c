@@ -8,6 +8,8 @@
 
 int particao = 0;
 
+int lidos = 0;
+
 typedef struct Clientes
 {
     int CodCliente;
@@ -17,13 +19,13 @@ typedef struct Clientes
     int Flag;
 }Clientes;
 
-FILE* CriaParticao (){
+void CriaParticao (){
 
     char convercao [6];
 
     sprintf(convercao, "%d.dat", particao);
     
-    printf("%s\n", convercao);
+    //printf("%s\n", convercao);
 
     FILE* P;
 
@@ -32,11 +34,9 @@ FILE* CriaParticao (){
                 exit(1);
             }
 
-    printf ("arquivo criado com sucesso\n");
+    //printf ("arquivo criado com sucesso\n");
 
     particao +=1;
-
-    return P;
 }
 
 FILE* AbrirArquivo (){
@@ -47,20 +47,39 @@ FILE* AbrirArquivo (){
                 exit(1);
             }
 
-    printf ("arquivo aberto com sucesso\n");
+    //printf ("arquivo aberto com sucesso\n");
 
     return P;    
 }
 
-void EscreverParticao (Clientes* cliente, FILE* P){
+FILE* AbrirParticao (int particaoID){
+
+    char convercao [10];
+
+    sprintf(convercao, "%d.dat", (particaoID));
+
+    FILE* P;
+    if ((P = fopen (convercao, "r+b")) == NULL){
+                printf ("não foi possível crirar o arquivo");
+                exit(1);
+            }
+
+    //printf ("arquivo aberto com sucesso\n");
+
+    return P; 
+}
+
+void EscreverParticao (Clientes* cliente, int percorrido, int particaoID){
+
+    FILE* P = AbrirParticao(particaoID);
     
     //coloca o cursor no final do arquivo
-    fseek (P, 0, SEEK_END);
+    fseek (P, sizeof (Clientes) * percorrido, SEEK_SET);
 
     fwrite (&cliente->CodCliente, sizeof(int), 1, P);
-    fwrite (&cliente->Nome, sizeof(char), sizeof(cliente->Nome), P);
+    fwrite (cliente->Nome, sizeof(char), sizeof(cliente->Nome), P);
 
-    fwrite (&cliente->DataNascimento, sizeof(char), sizeof(cliente->DataNascimento), P);
+    fwrite (cliente->DataNascimento, sizeof(char), sizeof(cliente->DataNascimento), P);
 
     fwrite (&cliente->Flag, sizeof(int), 1, P);
 
@@ -95,35 +114,42 @@ void LerArquivoTodo (){
 
 void LerParticaoToda (){
 
-    FILE* P;
-    if ((P = fopen ("0.dat", "r+b")) == NULL){
-                printf ("não foi possível abrir a partição");
-                exit(1);
-            }
+    for (int i = 0; i < (particao -1); i++){
 
-    printf ("arquivo aberto com sucesso\n");
+        char convercao [6];
 
-    //coloca o cursor no inicio do arquivo
-    fseek (P, 0, SEEK_SET);
-    Clientes* func = (Clientes*) malloc(sizeof(Clientes));
+        sprintf(convercao, "%d.dat", i);
 
-       
-    //caso o fread retorna o quanto conseguiu ler, logo valores nulos ou inferiores significam o fim do arquivo
-    while ((fread (&func->CodCliente, sizeof(int), 1, P)) > 0){
+        FILE* P;
+        if ((P = fopen (convercao, "r+b")) == NULL){
+            printf ("não foi possível abrir a partição");
+            exit(1);
+        }
+
+        printf ("\n\nPartocao %d aberta com sucesso\n", i);
+
+
+        //coloca o cursor no inicio do arquivo
+        fseek (P, 0, SEEK_SET);
+        Clientes* func = (Clientes*) malloc(sizeof(Clientes));
+
         
-        fread (func->Nome, sizeof(char), sizeof(func->Nome), P);
-        fread (func->DataNascimento, sizeof(char), sizeof(func->DataNascimento), P);
-        fread (&func->Flag, sizeof(int), 1, P);
+        //caso o fread retorna o quanto conseguiu ler, logo valores nulos ou inferiores significam o fim do arquivo
+        while ((fread (&func->CodCliente, sizeof(int), 1, P)) > 0){
+            
+            fread (func->Nome, sizeof(char), sizeof(func->Nome), P);
+            fread (func->DataNascimento, sizeof(char), sizeof(func->DataNascimento), P);
+            fread (&func->Flag, sizeof(int), 1, P);
 
-        printf ("CodCliente: %d\n", func->CodCliente);
-        printf ("Nome: %s\n", func->Nome);
-        printf ("DataNascimento: %s\n", func->DataNascimento);
+            printf ("CodCliente: %d\n", func->CodCliente);
+            printf ("Nome: %s\n", func->Nome);
+            printf ("DataNascimento: %s\n", func->DataNascimento);
+        }
 
-    }
-
-    free (func);
+        free (func);
     
-    fclose (P);
+        fclose (P);
+    }  
 }
 
 
@@ -131,11 +157,22 @@ void LerParticaoToda (){
 //Iniciar arquivo com antecedencia 
 Clientes* LerClientes (FILE* P){
 
+    //FILE* P = AbrirArquivo();
+
     Clientes* func = (Clientes*) malloc(sizeof(Clientes));
+
+    //colocando o cursor exatamente no final do ultimo lido
+    //fseek (P, sizeof(Clientes) * lidos, SEEK_SET);
+
+    lidos++;
 
 
     if (fread (&func->CodCliente, sizeof(int), 1, P) <= 0){
         printf("arquivo esvaziado\n");
+
+        func->CodCliente = -1;
+        func->Flag = TRUE;
+        //fclose(P);
         return func;
     }
 
@@ -143,98 +180,104 @@ Clientes* LerClientes (FILE* P){
     fread (func->DataNascimento, sizeof(char), sizeof(func->DataNascimento), P);
     fread (&func->Flag, sizeof(int), 1, P);
     
-    //printf ("CodCliente: %d\n", func->CodCliente);
-    //printf ("Nome: %s\n", func->Nome);
-    //printf ("DataNascimento: %s\n", func->DataNascimento);
-    //printf ("Flag: %d\n", func->Flag);
+    printf ("CodCliente: %d\n", func->CodCliente);
+    printf ("Nome: %s\n", func->Nome);
+    printf ("DataNascimento: %s\n", func->DataNascimento);
+    printf ("Flag: %d\n", func->Flag);
 
-    return  func;
+    fclose (P);
+    
+    //return  func;
 }
 
 int main (){
 
-    Clientes Vetor [7];
-
     FILE* Q = AbrirArquivo();
 
-    Clientes* cliente = (Clientes*) malloc(sizeof(Clientes));
-            
-        for (int i = 0; i < 7; i++){
+    Clientes* Vetor [7];
+       
+    for (int i = 0; i < 7; i++){
 
-        cliente = LerClientes(Q);
-
-        Vetor [i].CodCliente = cliente->CodCliente;
-        strcpy(Vetor[i].Nome, cliente->Nome);
-        strcpy(Vetor[i].DataNascimento, cliente->DataNascimento);
-        Vetor [i].Flag = 0;
-        }     
+    Vetor [i] = LerClientes(Q);     
+    }     
     
-    while (cliente->CodCliente > 0){
-        //tem que dar fclose antes de criar uma nova partição
-        FILE* P = CriaParticao();
+    //não encontre um proximo valor, soma
+    int vazio = 0;
+
+
+    int teste = 0;
+
+    while (vazio < 7){
 
         //descongelando o Vetor pra nova partição
         for (int i = 0; i < 7; i++){
 
-            Vetor[i].Flag = FALSE;
+            //printf("codigos contidos no vetor: %d\n", Vetor[i]->CodCliente);
+
+            //caso o vetor não esteja vazio, descongela
+            if (Vetor[i]->CodCliente > 0) Vetor[i]->Flag = FALSE;
         }
 
-        //apenas para settar alguem como o menor valor temporariamente
-        int menor = 0;
-        for (int i = 1; i < 7; i++){
+        //registra quantos itens foram inseridos na partição atual
+        int percorrido = 0;
 
-            if (Vetor [i].CodCliente < Vetor [menor].CodCliente){
-                menor = i;
-            }
-        }
-
-        EscreverParticao (&Vetor [menor], P);
-        printf ("o menor no vetor foi %d\n", menor);
+        percorrido++;
 
         //registra o ultimo inserido para comprarações
-        Clientes* UltimoInserido = &Vetor [menor];
+        Clientes* UltimoInserido;
 
         //contador para saber se o vetor inteiro esta congelado ou não
         int congelado = 0;
-        while (congelado < 7){
-            //apenas para settar alguem como o menor valor temporariamente
-            menor = 0;
 
-            for (int i = 1; i < 7; i++){
+        while (congelado < 7 && vazio < 7) {
+            int menor = -1;
 
-                if (Vetor [i].Flag != TRUE && (Vetor [i].CodCliente < Vetor [menor].CodCliente )){
-                    menor = i;
-                }
+
+            //printf("Vetor[%d] -> CodCliente: %d, Flag: %d\n", menor, Vetor[menor]->CodCliente, Vetor[menor]->Flag);
+            //printf("Clientes congelados: %d, Vazio: %d\n", congelado, vazio);
+
+
+            // Encontrar o menor cliente não congelado
+            for (int i = 0; i < 7; i++) {
+                if ((Vetor[i]->Flag == FALSE) && (Vetor[i]->CodCliente > 0)) {
+                    if (menor == -1 || Vetor[i]->CodCliente < Vetor[menor]->CodCliente) {
+                        menor = i;
+
+                    }
+                }              
             }
 
-            if (UltimoInserido->CodCliente > Vetor[menor].CodCliente) {
-                Vetor[menor].Flag = TRUE;
+            if (Vetor[menor]->CodCliente <= 0) {
+                Vetor[menor]->Flag = TRUE;
+                vazio++;
+            }
+
+            if (menor == -1) {
+                // Todos os clientes estão congelados ou vazios
+                break;
+            }
+
+            if (UltimoInserido->CodCliente >= Vetor[menor]->CodCliente) {
+                Vetor[menor]->Flag = TRUE;
                 congelado++;
                 continue;
             }
-
-            UltimoInserido = &Vetor [menor];
-            EscreverParticao (&Vetor [menor], P);
-
-            cliente = LerClientes(Q);
-            Vetor [menor].CodCliente = cliente->CodCliente;
-            strcpy(Vetor[menor].Nome, cliente->Nome);
-            strcpy(Vetor[menor].DataNascimento, cliente->DataNascimento);
-            Vetor [menor].Flag = 0;
-
-            if (cliente->CodCliente <= 0) {
-                break; // Parar se o cliente não for válido
+            
+            if (Vetor[menor]->CodCliente > 0) {
+                if (percorrido == 0) {  // Cria partição apenas se for o primeiro cliente.
+                    CriaParticao();
+                }
+                EscreverParticao(Vetor[menor], percorrido, particao - 1);
+                UltimoInserido = Vetor[menor];
+                Vetor[menor] = LerClientes(Q);
+                percorrido++;
             }
         }
-        fclose (P);
     }
 
     LerParticaoToda();
-    printf ("chegou aqui\n");
-
-
     
-    free (cliente);
     fclose (Q);
+
     return 0;
 }

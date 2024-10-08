@@ -164,6 +164,32 @@ void LerTodasParicoes (int particao_num){
     free (temp);
 }
 
+Registro* LerReservatorio (int contador){
+
+    FILE* P = AbrirReservatorio();
+
+    Registro* temp = (Registro*) malloc(sizeof(Registro));    
+
+    if ((fread (&temp->chave, sizeof(int), 1, P)) > 0){
+
+        temp->chave = -1;
+        temp->flag = 1;
+
+        fclose (P);
+
+    free (temp);
+
+    return temp;
+    }
+
+    fread (&temp->flag, sizeof(int), 1, P);
+       
+    fclose (P);
+
+    free (temp);
+
+    return temp;
+}
 
 // Função para gerar partições
 void gerar_particoes(FILE *entrada) {
@@ -176,13 +202,16 @@ void gerar_particoes(FILE *entrada) {
     int particao_num = 1;  // Contador de partições
     int ultimo_escrito = -1;  // Último registro escrito na partição atual
 
+    Registro* a;
 
     // Carrega registros iniciais até encher a memória ou até o fim do arquivo
     while (num_registros < MAX_TAM && !fim_arquivo) {
-        if (fscanf(entrada, "%d", &memoria[num_registros].chave) != 1) {
+        a = LerReservatorio (contador);
+        memoria [num_registros].chave = a->chave;
+        memoria [num_registros].flag = a->flag;
+        if (memoria[num_registros].chave == -1) {
             fim_arquivo = 1;  // Sinaliza fim do arquivo
         } else {
-            memoria[num_registros].flag = 0;  // Marca todos como ativos
             num_registros++;
         }
     }
@@ -238,7 +267,11 @@ void gerar_particoes(FILE *entrada) {
             }
 
             // Lê o próximo registro do arquivo
-            if (fscanf(entrada, "%d", &memoria[menor_indice].chave) != 1) {
+            a = LerReservatorio (contador);
+            memoria [num_registros].chave = a->chave;
+            memoria [num_registros].flag = a->flag;
+
+            if (memoria[menor_indice].chave == -1) {
                 memoria[menor_indice].flag = 1;  // Congela o registro se não houver mais entradas
             }
         }
@@ -308,13 +341,8 @@ void gerar_particoes(FILE *entrada) {
 int main() {
     CriaReservatorio();
 
-    FILE *entrada = fopen("entrada2.txt", "r");
-
-    if (!entrada) {
-        printf("Erro ao abrir o arquivo de entrada.\n");
-        return 1;
-    }
-
+    FILE* entrada = AbrirReservatorio ();
+    
     gerar_particoes(entrada);
 
     fclose(entrada);
